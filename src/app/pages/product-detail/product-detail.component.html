@@ -1,0 +1,122 @@
+<div class="container py-5">
+
+  <!-- Breadcrumb -->
+  <nav class="mb-4" *ngIf="!loading && product">
+    <ol class="breadcrumb" style="font-size:.82rem;">
+      <li class="breadcrumb-item"><a routerLink="/" class="text-decoration-none" style="color:#6366f1;">Home</a></li>
+      <li class="breadcrumb-item"><a routerLink="/products" class="text-decoration-none" style="color:#6366f1;">Products</a></li>
+      <li class="breadcrumb-item active text-muted">{{ product.name }}</li>
+    </ol>
+  </nav>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border" style="width:2.5rem;height:2.5rem;"></div>
+    <p class="text-muted mt-3">Loading product...</p>
+  </div>
+
+  <!-- Product -->
+  <div class="row g-5" *ngIf="!loading && product">
+
+    <!-- Image -->
+    <div class="col-md-5">
+      <div class="card border-0 overflow-hidden" style="border-radius:20px!important;box-shadow:0 8px 32px rgba(0,0,0,.1)!important;">
+        <img [src]="product.imageUrl || 'assets/no-image.png'"
+             [alt]="product.name"
+             style="width:100%;height:420px;object-fit:cover;">
+      </div>
+    </div>
+
+    <!-- Details -->
+    <div class="col-md-7 d-flex flex-column justify-content-center">
+
+      <span class="badge badge-pill mb-3"
+            style="background:#e0e7ff;color:#6366f1;font-size:.75rem;width:fit-content;">
+        {{ product.category }}
+      </span>
+
+      <h1 class="mb-2" style="font-size:1.75rem;line-height:1.2;">{{ product.name }}</h1>
+
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <span style="font-size:2rem;font-weight:800;color:#6366f1;">
+          R{{ product.price | number:'1.2-2' }}
+        </span>
+        <span class="badge" style="background:#d1fae5;color:#065f46;font-size:.75rem;border-radius:99px;padding:5px 12px;">
+          <i class="bi bi-check-circle me-1"></i>In Stock
+        </span>
+      </div>
+
+      <p class="text-muted mb-4" style="font-size:.95rem;line-height:1.7;">{{ product.description }}</p>
+
+      <!-- Quantity -->
+      <div class="mb-4">
+        <label class="fw-600 mb-2 d-block" style="font-size:.85rem;font-weight:600;color:#374151;">Quantity</label>
+        <div class="d-flex align-items-center gap-3">
+          <div class="d-flex align-items-center"
+               style="border:1.5px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+            <button class="btn qty-btn border-0"
+                    style="background:transparent;color:#374151;"
+                    (click)="decreaseQty()">
+              <i class="bi bi-dash"></i>
+            </button>
+            <span class="fw-bold px-4" style="font-size:1rem;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;line-height:32px;">
+              {{ quantity }}
+            </span>
+            <button class="btn qty-btn border-0"
+                    style="background:transparent;color:#374151;"
+                    (click)="increaseQty()">
+              <i class="bi bi-plus"></i>
+            </button>
+          </div>
+          <span class="text-muted" style="font-size:.82rem;">
+            Subtotal: <strong style="color:#6366f1;">R{{ (product.price * quantity) | number:'1.2-2' }}</strong>
+          </span>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="d-flex gap-3 mb-4 flex-wrap">
+        <button class="btn btn-primary px-5 py-2 fw-semibold"
+                style="border-radius:99px!important;"
+                (click)="addToCart()" [disabled]="added">
+          <i class="bi me-2"
+             [class.bi-check-lg]="added"
+             [class.bi-bag-plus]="!added"></i>
+          {{ added ? 'Added to Cart!' : 'Add to Cart' }}
+        </button>
+        <a routerLink="/cart"
+           class="btn py-2 px-4"
+           style="border:1.5px solid #e5e7eb;border-radius:99px!important;font-weight:600;color:#374151;">
+          <i class="bi bi-bag me-2"></i>View Cart
+        </a>
+      </div>
+
+      <!-- Trust badges -->
+      <div class="d-flex gap-4 flex-wrap">
+        <div class="d-flex align-items-center gap-2 text-muted" style="font-size:.8rem;">
+          <i class="bi bi-truck" style="color:#6366f1;"></i> Free delivery
+        </div>
+        <div class="d-flex align-items-center gap-2 text-muted" style="font-size:.8rem;">
+          <i class="bi bi-shield-check" style="color:#10b981;"></i> Secure checkout
+        </div>
+        <div class="d-flex align-items-center gap-2 text-muted" style="font-size:.8rem;">
+          <i class="bi bi-arrow-counterclockwise" style="color:#f59e0b;"></i> 30-day returns
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Not Found -->
+  <div *ngIf="!loading && !product" class="text-center py-5">
+    <div style="width:80px;height:80px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <i class="bi bi-exclamation-circle" style="font-size:2rem;color:#ef4444;"></i>
+    </div>
+    <h4 class="fw-bold">Product not found</h4>
+    <p class="text-muted">This product may have been removed or doesn't exist.</p>
+    <a routerLink="/products" class="btn btn-primary px-5 mt-2" style="border-radius:99px!important;">
+      Browse Products
+    </a>
+  </div>
+
+</div>

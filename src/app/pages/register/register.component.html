@@ -1,0 +1,75 @@
+<div class="auth-page">
+  <div class="auth-card" style="max-width:480px;">
+
+    <div class="auth-logo">
+      <i class="bi bi-person-plus-fill"></i>
+    </div>
+
+    <div class="text-center mb-4">
+      <h2 class="mb-1" style="font-size:1.5rem;">Create your account</h2>
+      <p class="text-muted mb-0" style="font-size:.875rem;">Join thousands of happy shoppers</p>
+    </div>
+
+    <div class="alert p-3 mb-3" *ngIf="success"
+         style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;color:#065f46;font-size:.85rem;">
+      <i class="bi bi-check-circle me-2"></i>{{ success }}
+    </div>
+    <div class="alert p-3 mb-3" *ngIf="error"
+         style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#991b1b;font-size:.85rem;">
+      <i class="bi bi-exclamation-circle me-2"></i>{{ error }}
+    </div>
+
+    <div class="row g-3">
+      <div class="col-6">
+        <label class="form-label">First Name</label>
+        <input type="text" class="form-control"
+               [(ngModel)]="form.firstName" placeholder="John">
+      </div>
+      <div class="col-6">
+        <label class="form-label">Last Name</label>
+        <input type="text" class="form-control"
+               [(ngModel)]="form.lastName" placeholder="Doe">
+      </div>
+      <div class="col-12">
+        <label class="form-label">Email address</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+          <input type="email" class="form-control"
+                 [(ngModel)]="form.email" placeholder="you@example.com">
+        </div>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Phone number</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-phone"></i></span>
+          <input type="tel" class="form-control"
+                 [(ngModel)]="form.phone" placeholder="0821234567">
+        </div>
+      </div>
+      <div class="col-12">
+        <label class="form-label">Password</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock"></i></span>
+          <input type="password" class="form-control"
+                 [(ngModel)]="form.password" placeholder="Min 6 characters"
+                 (keyup.enter)="register()">
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary w-100 py-3 fw-semibold mt-4 mb-3"
+            style="border-radius:12px!important;"
+            (click)="register()" [disabled]="loading">
+      <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+      {{ loading ? 'Creating account...' : 'Create Account' }}
+    </button>
+
+    <p class="text-center mb-0" style="font-size:.875rem;color:#6b7280;">
+      Already have an account?
+      <a routerLink="/login" style="color:#6366f1;font-weight:600;text-decoration:none;">
+        Sign in
+      </a>
+    </p>
+
+  </div>
+</div>

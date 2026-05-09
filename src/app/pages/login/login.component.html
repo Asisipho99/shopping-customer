@@ -1,0 +1,59 @@
+<div class="auth-page">
+  <div class="auth-card">
+
+    <div class="auth-logo">
+      <i class="bi bi-bag-check-fill"></i>
+    </div>
+
+    <div class="text-center mb-4">
+      <h2 class="mb-1" style="font-size:1.5rem;">Welcome back</h2>
+      <p class="text-muted mb-0" style="font-size:.875rem;">Sign in to continue shopping</p>
+    </div>
+
+    <div class="alert p-3 mb-3" *ngIf="error"
+         style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#991b1b;font-size:.85rem;">
+      <i class="bi bi-exclamation-circle me-2"></i>{{ error }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Email address</label>
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+        <input type="email" class="form-control"
+               [(ngModel)]="email" placeholder="you@example.com"
+               (keyup.enter)="login()">
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label">Password</label>
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+        <input type="password" class="form-control"
+               [(ngModel)]="password" placeholder="••••••••"
+               (keyup.enter)="login()">
+      </div>
+    </div>
+
+    <button class="btn btn-primary w-100 py-3 fw-semibold mb-3"
+            style="border-radius:12px!important;"
+            (click)="login()" [disabled]="loading">
+      <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+      {{ loading ? 'Signing in...' : 'Sign In' }}
+    </button>
+
+    <div class="d-flex align-items-center gap-3 mb-3">
+      <hr class="flex-grow-1 m-0">
+      <span class="text-muted" style="font-size:.75rem;">or</span>
+      <hr class="flex-grow-1 m-0">
+    </div>
+
+    <p class="text-center mb-0" style="font-size:.875rem;color:#6b7280;">
+      Don't have an account?
+      <a routerLink="/register" style="color:#6366f1;font-weight:600;text-decoration:none;">
+        Create one free
+      </a>
+    </p>
+
+  </div>
+</div>
