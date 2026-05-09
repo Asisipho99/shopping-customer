@@ -6,4 +6,5 @@ export const environment = {
   orderServiceUrl:     'https://order-service-production-520e.up.railway.app/api',
   integrationUrl:      'https://integration-service-production-fcaa.up.railway.app/api',
   emailServiceUrl:     'https://email-service-production-4311.up.railway.app/api',
+  aiServiceUrl:        'http://localhost:5000',
 };
