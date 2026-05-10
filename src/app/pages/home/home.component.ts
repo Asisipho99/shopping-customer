@@ -50,9 +50,9 @@ export class HomeComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.productService.getAll().subscribe({
-      next: (products) => {
-        this.featuredProducts = products.slice(0, 8);
+    this.productService.getAll(0, 8).subscribe({
+      next: (page) => {
+        this.featuredProducts = page.content;
         this.loading          = false;
       },
       error: () => {
