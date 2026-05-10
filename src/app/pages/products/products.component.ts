@@ -18,6 +18,7 @@ export class ProductsComponent implements OnInit {
   products:         Product[] = [];
   filteredProducts: Product[] = [];
   loading           = true;
+  error             = '';
   searchTerm        = '';
   selectedCategory  = '';
   addedProductId:   number | null = null;

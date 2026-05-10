@@ -3,10 +3,12 @@ import { BehaviorSubject } from 'rxjs';
 import { Cart, CartItem } from '../../models/cart.model';
 import { Product } from '../../models/product.model';
 
+const CART_KEY = 'shopping_cart';
+
 @Injectable({ providedIn: 'root' })
 export class CartService {
 
-  private cart: Cart = { items: [], totalItems: 0, totalPrice: 0 };
+  private cart: Cart = this.loadFromStorage();
   private cartSubject = new BehaviorSubject<Cart>(this.cart);
   cart$ = this.cartSubject.asObservable();
 
@@ -42,6 +44,7 @@ export class CartService {
 
   clearCart() {
     this.cart = { items: [], totalItems: 0, totalPrice: 0 };
+    localStorage.removeItem(CART_KEY);
     this.cartSubject.next(this.cart);
   }
 
@@ -55,6 +58,27 @@ export class CartService {
     this.cart.totalPrice = this.cart.items
                                .reduce((sum, i) =>
                                  sum + (i.product.price * i.quantity), 0);
+    this.saveToStorage();
     this.cartSubject.next({ ...this.cart });
+  }
+
+  private saveToStorage() {
+    try {
+      localStorage.setItem(CART_KEY, JSON.stringify(this.cart));
+    } catch {
+      // localStorage may be unavailable in some environments
+    }
+  }
+
+  private loadFromStorage(): Cart {
+    try {
+      const saved = localStorage.getItem(CART_KEY);
+      if (saved) {
+        return JSON.parse(saved) as Cart;
+      }
+    } catch {
+      // Corrupted data — start fresh
+    }
+    return { items: [], totalItems: 0, totalPrice: 0 };
   }
 }
