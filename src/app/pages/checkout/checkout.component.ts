@@ -43,6 +43,7 @@ export class CheckoutComponent implements OnInit {
     const request = {
       customerId:    this.auth.getCustomerId(),
       customerEmail: this.auth.getEmail(),
+      customerName:  this.auth.getFirstName(),
       items: this.cart.items.map(i => ({
         productId:   i.product.productId,
         productName: i.product.name,
