@@ -16,6 +16,7 @@ export class OrdersComponent implements OnInit {
 
   orders:  Order[] = [];
   loading  = true;
+  error    = '';
   selectedOrder: Order | null = null;
 
   constructor(
@@ -30,7 +31,10 @@ export class OrdersComponent implements OnInit {
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         this.loading = false;
       },
-      error: () => this.loading = false
+      error: () => {
+        this.error   = 'Failed to load your orders. Please try again.';
+        this.loading = false;
+      }
     });
   }
 

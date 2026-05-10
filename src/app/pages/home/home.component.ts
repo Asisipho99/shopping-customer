@@ -19,6 +19,7 @@ export class HomeComponent implements OnInit {
 
   featuredProducts: Product[] = [];
   loading           = true;
+  error             = '';
   recommendations:  any[]     = [];
 
   categories = [
@@ -54,7 +55,10 @@ export class HomeComponent implements OnInit {
         this.featuredProducts = products.slice(0, 8);
         this.loading          = false;
       },
-      error: () => this.loading = false
+      error: () => {
+        this.error   = 'Failed to load products. Please refresh the page.';
+        this.loading = false;
+      }
     });
 
     // Load personalised recommendations if logged in

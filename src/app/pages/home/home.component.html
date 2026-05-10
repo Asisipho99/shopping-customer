@@ -72,6 +72,11 @@
       <div class="spinner-border" style="width:2.5rem;height:2.5rem;"></div>
       <p class="text-muted mt-3">Loading products...</p>
     </div>
+  } @else if (error) {
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+      <i class="bi bi-exclamation-circle-fill"></i>
+      <span>{{ error }}</span>
+    </div>
   } @else {
     <div class="row g-3">
       @for (product of featuredProducts; track product.productId) {

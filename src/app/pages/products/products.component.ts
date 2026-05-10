@@ -44,13 +44,17 @@ export class ProductsComponent implements OnInit {
 
   loadProducts() {
     this.loading = true;
+    this.error   = '';
     this.productService.getAll().subscribe({
       next: (data) => {
         this.products = data;
         this.filter();
         this.loading  = false;
       },
-      error: () => this.loading = false
+      error: () => {
+        this.error   = 'Failed to load products. Please try again.';
+        this.loading = false;
+      }
     });
   }
 
