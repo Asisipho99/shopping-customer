@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ProductService } from '../../core/services/product.service';
 import { CartService } from '../../core/services/cart.service';
+import { AuthService } from '../../core/services/auth.service';
+import { RecommendationService } from '../../core/services/recommendation.service';
 import { Product } from '../../models/product.model';
 
 @Component({
@@ -20,16 +22,27 @@ export class ProductDetailComponent implements OnInit {
   added     = false;
 
   constructor(
-    private route:          ActivatedRoute,
-    private productService: ProductService,
-    private cartService:    CartService
+    private route:                  ActivatedRoute,
+    private productService:         ProductService,
+    private cartService:            CartService,
+    private auth:                   AuthService,
+    private recommendationService:  RecommendationService
   ) {}
 
   ngOnInit() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     this.productService.getById(id).subscribe({
-      next: (p) => { this.product = p; this.loading = false; },
-      error: ()  => this.loading = false
+      next: (p) => {
+        this.product = p;
+        this.loading = false;
+        // Log view interaction to improve AI recommendations
+        if (this.auth.isLoggedIn()) {
+          this.recommendationService
+              .logInteraction(this.auth.getCustomerId(), p.productId, 'view')
+              .subscribe({ error: () => {} }); // fail silently
+        }
+      },
+      error: () => this.loading = false
     });
   }
 

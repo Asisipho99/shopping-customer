@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../core/services/cart.service';
 import { OrderService } from '../../core/services/order.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RecommendationService } from '../../core/services/recommendation.service';
 import { Cart } from '../../models/cart.model';
 
 @Component({
@@ -22,10 +23,11 @@ export class CheckoutComponent implements OnInit {
   orderId:       number | null = null;
 
   constructor(
-    private cartService:  CartService,
-    private orderService: OrderService,
-    public auth:         AuthService,
-    private router:       Router
+    private cartService:            CartService,
+    private orderService:           OrderService,
+    public  auth:                   AuthService,
+    private router:                 Router,
+    private recommendationService:  RecommendationService
   ) {}
 
   ngOnInit() {
@@ -56,8 +58,16 @@ export class CheckoutComponent implements OnInit {
       next: (res) => {
         this.success = true;
         this.loading = false;
+
+        // Log purchase interactions for every item to train the AI model
+        const customerId = this.auth.getCustomerId();
+        this.cart.items.forEach(i => {
+          this.recommendationService
+              .logInteraction(customerId, i.product.productId, 'purchase')
+              .subscribe({ error: () => {} }); // fail silently
+        });
+
         this.cartService.clearCart();
-        // Navigate to orders after 3 seconds
         setTimeout(() => this.router.navigate(['/orders']), 3000);
       },
       error: (err) => {
