@@ -18,10 +18,17 @@ export class ProductsComponent implements OnInit {
   products:         Product[] = [];
   filteredProducts: Product[] = [];
   loading           = true;
+  loadingMore       = false;
   error             = '';
   searchTerm        = '';
   selectedCategory  = '';
   addedProductId:   number | null = null;
+
+  // Pagination state
+  currentPage  = 0;
+  pageSize     = 20;
+  totalPages   = 0;
+  isLastPage   = false;
 
   categories = [
     'Electronics','Clothing','Books','Home & Garden',
@@ -35,27 +42,54 @@ export class ProductsComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Check if category passed from home page
     this.route.queryParams.subscribe(params => {
       this.selectedCategory = params['category'] || '';
-      this.loadProducts();
+      this.resetAndLoad();
     });
+  }
+
+  resetAndLoad() {
+    this.products     = [];
+    this.currentPage  = 0;
+    this.isLastPage   = false;
+    this.loadProducts();
   }
 
   loadProducts() {
     this.loading = true;
     this.error   = '';
-    this.productService.getAll().subscribe({
-      next: (data) => {
-        this.products = data;
-        this.filter();
-        this.loading  = false;
-      },
-      error: () => {
-        this.error   = 'Failed to load products. Please try again.';
-        this.loading = false;
-      }
-    });
+
+    // Use search/category endpoints (return full list) or paginated endpoint
+    if (this.searchTerm) {
+      this.productService.searchByName(this.searchTerm).subscribe({
+        next: (data) => { this.products = data; this.filter(); this.loading = false; },
+        error: () => { this.error = 'Failed to load products.'; this.loading = false; }
+      });
+    } else if (this.selectedCategory) {
+      this.productService.getByCategory(this.selectedCategory).subscribe({
+        next: (data) => { this.products = data; this.filter(); this.loading = false; },
+        error: () => { this.error = 'Failed to load products.'; this.loading = false; }
+      });
+    } else {
+      this.productService.getAll(this.currentPage, this.pageSize).subscribe({
+        next: (page) => {
+          this.products         = [...this.products, ...page.content];
+          this.filteredProducts = this.products;
+          this.totalPages       = page.totalPages;
+          this.isLastPage       = page.last;
+          this.loading          = false;
+          this.loadingMore      = false;
+        },
+        error: () => { this.error = 'Failed to load products.'; this.loading = false; }
+      });
+    }
+  }
+
+  loadMore() {
+    if (this.isLastPage || this.loadingMore) return;
+    this.loadingMore = true;
+    this.currentPage++;
+    this.loadProducts();
   }
 
   filter() {
@@ -66,6 +100,14 @@ export class ProductsComponent implements OnInit {
                         ? p.category === this.selectedCategory : true;
       return matchName && matchCat;
     });
+  }
+
+  onSearch() {
+    this.resetAndLoad();
+  }
+
+  onCategoryChange() {
+    this.resetAndLoad();
   }
 
   addToCart(product: Product) {

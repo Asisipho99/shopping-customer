@@ -4,6 +4,15 @@ import { Observable } from 'rxjs';
 import { Product } from '../../models/product.model';
 import { environment } from '../../../environments/environment';
 
+export interface PageResponse<T> {
+  content:       T[];
+  page:          number;
+  size:          number;
+  totalElements: number;
+  totalPages:    number;
+  last:          boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ProductService {
 
@@ -11,8 +20,9 @@ export class ProductService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<Product[]> {
-    return this.http.get<Product[]>(`${this.url}/products`);
+  getAll(page = 0, size = 20): Observable<PageResponse<Product>> {
+    return this.http.get<PageResponse<Product>>(
+      `${this.url}/products?page=${page}&size=${size}`);
   }
 
   getById(id: number): Observable<Product> {

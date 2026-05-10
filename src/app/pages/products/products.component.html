@@ -25,7 +25,7 @@
             <input type="text" class="form-control ps-4"
                    style="font-size:.875rem;"
                    placeholder="Search products..."
-                   [(ngModel)]="searchTerm" (input)="filter()">
+                   [(ngModel)]="searchTerm" (input)="onSearch()">
           </div>
         </div>
 
@@ -46,7 +46,7 @@
                    [style.background]="selectedCategory === cat ? '#e0e7ff' : 'transparent'">
               <input class="form-check-input m-0" type="radio"
                      [value]="cat" [(ngModel)]="selectedCategory"
-                     (change)="filter()" [id]="cat">
+                     (change)="onCategoryChange()" [id]="cat">
               <span style="font-size:.85rem;font-weight:500;" [style.color]="selectedCategory === cat ? '#6366f1' : '#374151'">{{ cat }}</span>
             </label>
           </div>
@@ -54,7 +54,7 @@
 
         <button class="btn btn-sm w-100"
                 style="border:1.5px solid #e5e7eb;border-radius:8px;font-size:.8rem;font-weight:600;color:#6b7280;"
-                (click)="searchTerm=''; selectedCategory=''; filter()">
+                (click)="searchTerm=''; selectedCategory=''; onCategoryChange()">
           <i class="bi bi-x-circle me-1"></i>Clear Filters
         </button>
       </div>
@@ -121,8 +121,19 @@
           <h5 class="fw-bold text-muted">No products found</h5>
           <p class="text-muted" style="font-size:.875rem;">Try adjusting your search or filters</p>
           <button class="btn btn-outline-primary btn-sm px-4"
-                  (click)="searchTerm=''; selectedCategory=''; filter()">
+                  (click)="searchTerm=''; selectedCategory=''; onCategoryChange()">
             Clear Filters
+          </button>
+        </div>
+
+        <!-- Load More -->
+        <div class="col-12 text-center mt-3"
+             *ngIf="!isLastPage && !searchTerm && !selectedCategory">
+          <button class="btn btn-outline-primary px-5"
+                  style="border-radius:99px;"
+                  (click)="loadMore()" [disabled]="loadingMore">
+            <span *ngIf="loadingMore" class="spinner-border spinner-border-sm me-2"></span>
+            {{ loadingMore ? 'Loading...' : 'Load More' }}
           </button>
         </div>
 
