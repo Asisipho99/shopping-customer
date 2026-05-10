@@ -30,6 +30,9 @@ export class ProductsComponent implements OnInit {
   totalPages   = 0;
   isLastPage   = false;
 
+  // Filter sidebar toggle on mobile
+  filtersOpen  = false;
+
   categories = [
     'Electronics','Clothing','Books','Home & Garden',
     'Sports','Toys','Food & Beverages','Other'
