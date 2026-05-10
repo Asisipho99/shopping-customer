@@ -26,8 +26,19 @@ export class RegisterComponent {
   constructor(private auth: AuthService, private router: Router) {}
 
   register() {
+    this.error = '';
+
+    // Client-side password validation
+    if (this.form.password.length < 8) {
+      this.error = 'Password must be at least 8 characters.';
+      return;
+    }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(this.form.password)) {
+      this.error = 'Password must contain at least one uppercase letter, one lowercase letter, and one number.';
+      return;
+    }
+
     this.loading = true;
-    this.error   = '';
     this.auth.register(this.form).subscribe({
       next: () => {
         this.success = 'Account created! Redirecting to login...';
