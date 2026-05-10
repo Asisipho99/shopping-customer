@@ -48,7 +48,7 @@ export class ResetPasswordComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error   = err.error?.message || 'Invalid or expired reset token. Please request a new link.';
+        this.error   = err.error?.message || err.error || 'Invalid or expired reset token. Please request a new link.';
         this.loading = false;
       }
     });
