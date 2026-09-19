@@ -1,3 +1,4 @@
+import { computed } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RequestState } from './request-state';
 
@@ -83,6 +84,47 @@ describe('RequestState', () => {
     state.fail(serverError());
     expect(state.isBusy).toBe(false);
     expect(state.error?.retryable).toBe(true);
+  });
+
+  /**
+   * Regression guard for the "click twice to see products" bug.
+   *
+   * The app is zoneless, so state read by a template has to be signal-backed.
+   * With plain fields the data arrived but nothing repainted until an unrelated
+   * event forced a check. Deriving through `computed` proves the reads are
+   * tracked: if these getters ever stop reading signals, the computed will not
+   * recompute and this test fails.
+   */
+  it('is reactive, so a view reading it updates when the request settles', () => {
+    const state = new RequestState<string[]>([]);
+    const view = computed(() => {
+      if (state.isLoading) return 'skeleton';
+      if (state.isBlockingFailure) return 'error';
+      if (state.isEmpty) return 'empty';
+      return state.hasData ? 'list' : 'idle';
+    });
+
+    expect(view()).toBe('idle');
+
+    state.begin();
+    expect(view()).toBe('skeleton');
+
+    state.succeed(['a']);
+    expect(view()).toBe('list');
+
+    // A failure with data already loaded is partial by design, so the list
+    // stays on screen rather than being replaced by an error panel.
+    state.beginRefresh();
+    state.fail(serverError());
+    expect(view()).toBe('list');
+
+    // A failure with nothing loaded blocks, and must recompute to the panel.
+    const cold = new RequestState<string[]>([]);
+    const coldView = computed(() => (cold.isBlockingFailure ? 'error' : 'other'));
+    expect(coldView()).toBe('other');
+    cold.begin();
+    cold.fail(serverError());
+    expect(coldView()).toBe('error');
   });
 
   it('reset returns it to a pristine state', () => {

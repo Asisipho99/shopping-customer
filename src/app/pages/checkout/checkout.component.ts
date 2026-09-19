@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { CartService } from '../../core/services/cart.service';
@@ -7,68 +7,67 @@ import { AuthService } from '../../core/services/auth.service';
 import { RecommendationService } from '../../core/services/recommendation.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AppError, ErrorKind } from '../../core/models/app-error';
-import { Cart } from '../../models/cart.model';
 
 @Component({
   selector: 'app-checkout',
   standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './checkout.component.html',
-  styleUrls: ['./checkout.component.scss']
+  styleUrls: ['./checkout.component.scss'],
 })
 export class CheckoutComponent implements OnInit {
+  private readonly cartService = inject(CartService);
+  private readonly orderService = inject(OrderService);
+  private readonly router = inject(Router);
+  private readonly recommendationService = inject(RecommendationService);
+  private readonly toasts = inject(ToastService);
+  readonly auth = inject(AuthService);
 
-  cart: Cart = { items: [], totalItems: 0, totalPrice: 0 };
-  loading = false;
-  success = false;
-  error = '';
-  errorKind: ErrorKind | null = null;
-  retryable = false;
-  orderId: number | null = null;
+  readonly cart = this.cartService.cart;
 
-  constructor(
-    private cartService: CartService,
-    private orderService: OrderService,
-    public auth: AuthService,
-    private router: Router,
-    private recommendationService: RecommendationService,
-    private toasts: ToastService
-  ) {}
+  // Signals, because these are all set from an HTTP callback. Plain fields
+  // would never repaint under zoneless change detection.
+  readonly loading = signal(false);
+  readonly success = signal(false);
+  readonly error = signal('');
+  readonly errorKind = signal<ErrorKind | null>(null);
+  readonly retryable = signal(false);
 
   ngOnInit() {
-    this.cartService.cart$.subscribe(cart => this.cart = cart);
-    // Redirect if cart is empty
-    if (this.cartService.getCart().items.length === 0) {
+    // Nothing to check out: send them back rather than showing an empty form.
+    if (this.cart().items.length === 0) {
       this.router.navigate(['/cart']);
     }
   }
 
   placeOrder() {
-    this.loading = true;
-    this.error = '';
-    this.errorKind = null;
-    this.retryable = false;
+    this.loading.set(true);
+    this.error.set('');
+    this.errorKind.set(null);
+    this.retryable.set(false);
+
+    const current = this.cart();
 
     const request = {
-      customerId:    this.auth.getCustomerId(),
+      customerId: this.auth.getCustomerId(),
       customerEmail: this.auth.getEmail(),
-      customerName:  this.auth.getFirstName(),
-      items: this.cart.items.map(i => ({
-        productId:   i.product.productId,
+      customerName: this.auth.getFirstName(),
+      items: current.items.map((i) => ({
+        productId: i.product.productId,
         productName: i.product.name,
-        quantity:    i.quantity,
-        unitPrice:   i.product.price
-      }))
+        quantity: i.quantity,
+        unitPrice: i.product.price,
+      })),
     };
 
     // Snapshot the lines before the cart is cleared, so the interaction log
     // still has them if clearCart() runs first.
-    const lines = [...this.cart.items];
+    const lines = [...current.items];
 
     this.orderService.placeOrder(request).subscribe({
       next: () => {
-        this.success = true;
-        this.loading = false;
+        this.success.set(true);
+        this.loading.set(false);
         this.toasts.success('Your order has been placed.', 'Order confirmed');
 
         const customerId = this.auth.getCustomerId();
@@ -86,10 +85,10 @@ export class CheckoutComponent implements OnInit {
         setTimeout(() => this.router.navigate(['/orders']), 3000);
       },
       error: (err: AppError) => {
-        this.error = err.message;
-        this.errorKind = err.kind;
-        this.retryable = err.retryable;
-        this.loading = false;
+        this.error.set(err.message);
+        this.errorKind.set(err.kind);
+        this.retryable.set(err.retryable);
+        this.loading.set(false);
 
         // The cart is deliberately left intact so the customer can retry
         // without rebuilding it.

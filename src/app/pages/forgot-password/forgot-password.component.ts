@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -10,28 +10,36 @@ import { AppError } from '../../core/models/app-error';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './forgot-password.component.html',
-  styleUrls: ['./forgot-password.component.scss']
+  styleUrls: ['./forgot-password.component.scss'],
 })
 export class ForgotPasswordComponent {
-  email   = '';
-  loading = false;
-  success = '';
-  error   = '';
+  private readonly auth = inject(AuthService);
 
-  constructor(private auth: AuthService) {}
+  email = '';
+
+  readonly loading = signal(false);
+  readonly success = signal('');
+  readonly error = signal('');
 
   submit() {
-    if (!this.email) { this.error = 'Please enter your email address.'; return; }
-    this.loading = true;
-    this.error   = '';
+    if (!this.email) {
+      this.error.set('Please enter your email address.');
+      return;
+    }
+
+    this.loading.set(true);
+    this.error.set('');
+
     this.auth.forgotPassword(this.email).subscribe({
       next: () => {
-        this.success = 'If that email is registered, a reset link has been sent. Check your inbox.';
-        this.loading = false;
+        this.success.set(
+          'If that email is registered, a reset link has been sent. Check your inbox.'
+        );
+        this.loading.set(false);
       },
       error: (err: AppError) => {
-        this.error = err.message;
-        this.loading = false;
+        this.error.set(err.message);
+        this.loading.set(false);
       },
     });
   }

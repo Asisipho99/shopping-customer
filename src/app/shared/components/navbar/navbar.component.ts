@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, HostListener, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
@@ -9,23 +9,20 @@ import { CartService } from '../../../core/services/cart.service';
   standalone: true,
   imports: [RouterLink, RouterLinkActive, CommonModule],
   templateUrl: './navbar.component.html',
-  styleUrls: ['./navbar.component.scss']
+  styleUrls: ['./navbar.component.scss'],
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent {
+  readonly auth = inject(AuthService);
+  private readonly cartService = inject(CartService);
 
-  cartItemCount = 0;
+  /**
+   * Reads the cart signal directly, so the badge tracks any change to the cart
+   * rather than relying on a subscription that, under zoneless change
+   * detection, would not have repainted on its own.
+   */
+  readonly cartItemCount = this.cartService.totalItems;
+
   mobileOpen = false;
-
-  constructor(
-    public auth: AuthService,
-    private cartService: CartService
-  ) {}
-
-  ngOnInit() {
-    this.cartService.cart$.subscribe(cart => {
-      this.cartItemCount = cart.totalItems;
-    });
-  }
 
   toggleMobile() {
     this.mobileOpen = !this.mobileOpen;

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -15,8 +15,11 @@ import { AppError } from '../../core/models/app-error';
 export class LoginComponent implements OnInit {
   email = '';
   password = '';
-  error = '';
-  loading = false;
+
+  // Signals: both are set from the login response, and a plain field would not
+  // repaint under zoneless change detection.
+  readonly error = signal('');
+  readonly loading = signal(false);
 
   /** Where to go after signing in, set by the interceptor on session expiry. */
   private returnUrl = '/';
@@ -32,19 +35,18 @@ export class LoginComponent implements OnInit {
   }
 
   login() {
-    this.loading = true;
-    this.error = '';
+    this.loading.set(true);
+    this.error.set('');
 
     this.auth.login(this.email, this.password).subscribe({
       next: () => this.router.navigateByUrl(this.returnUrl),
       error: (err: AppError) => {
         // A 401 here means the credentials were wrong, not that a session
         // lapsed, so keep the specific wording rather than the mapped default.
-        this.error =
-          err.kind === 'auth'
-            ? 'Invalid email or password.'
-            : err.message;
-        this.loading = false;
+        this.error.set(
+          err.kind === 'auth' ? 'Invalid email or password.' : err.message
+        );
+        this.loading.set(false);
       },
     });
   }

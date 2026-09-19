@@ -1,26 +1,23 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CartService } from '../../core/services/cart.service';
-import { Cart } from '../../models/cart.model';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
   selector: 'app-cart',
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './cart.component.html',
-  styleUrls: ['./cart.component.scss']
+  styleUrls: ['./cart.component.scss'],
 })
-export class CartComponent implements OnInit {
+export class CartComponent {
+  private readonly cartService = inject(CartService);
+  private readonly toasts = inject(ToastService);
 
-  cart: Cart = { items: [], totalItems: 0, totalPrice: 0 };
-
-  constructor(private cartService: CartService) {}
-
-  ngOnInit() {
-    this.cartService.cart$.subscribe(cart => this.cart = cart);
-  }
+  /** Signal from the service, so the view tracks changes without subscribing. */
+  readonly cart = this.cartService.cart;
 
   updateQuantity(productId: number, quantity: number) {
     this.cartService.updateQuantity(productId, quantity);
@@ -28,9 +25,11 @@ export class CartComponent implements OnInit {
 
   remove(productId: number) {
     this.cartService.removeFromCart(productId);
+    this.toasts.info('Item removed from your cart.');
   }
 
   clearCart() {
     this.cartService.clearCart();
+    this.toasts.info('Your cart has been cleared.');
   }
 }

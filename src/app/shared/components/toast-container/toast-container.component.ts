@@ -1,5 +1,4 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Toast, ToastKind, ToastService } from '../../../core/services/toast.service';
 
 const ICONS: Record<ToastKind, string> = {
@@ -18,10 +17,9 @@ const ICONS: Record<ToastKind, string> = {
 @Component({
   selector: 'app-toast-container',
   standalone: true,
-  imports: [CommonModule],
   template: `
     <div class="toast-region" aria-live="assertive" aria-atomic="true">
-      @for (toast of toasts$ | async; track toast.id) {
+      @for (toast of toasts.toasts(); track toast.id) {
         <div class="toast-item" [class]="'toast-' + toast.kind" role="alert">
           <i class="bi {{ icon(toast) }} toast-icon" aria-hidden="true"></i>
           <div class="toast-text">
@@ -133,7 +131,6 @@ const ICONS: Record<ToastKind, string> = {
 })
 export class ToastContainerComponent {
   readonly toasts = inject(ToastService);
-  readonly toasts$ = this.toasts.toasts$;
 
   icon(toast: Toast): string {
     return ICONS[toast.kind];
