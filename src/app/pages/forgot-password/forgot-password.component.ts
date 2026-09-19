@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { AppError } from '../../core/models/app-error';
 
 @Component({
   selector: 'app-forgot-password',
@@ -28,10 +29,10 @@ export class ForgotPasswordComponent {
         this.success = 'If that email is registered, a reset link has been sent. Check your inbox.';
         this.loading = false;
       },
-      error: () => {
-        this.error   = 'Something went wrong. Please try again.';
+      error: (err: AppError) => {
+        this.error = err.message;
         this.loading = false;
-      }
+      },
     });
   }
 }

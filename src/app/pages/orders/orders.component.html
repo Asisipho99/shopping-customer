@@ -9,31 +9,45 @@
 <div class="container pb-5">
 
   <!-- Loading -->
-  <div *ngIf="loading" class="text-center py-5">
-    <div class="spinner-border" style="width:2.5rem;height:2.5rem;"></div>
-    <p class="text-muted mt-3">Loading your orders...</p>
-  </div>
+  @if (state.isLoading) {
+    <app-loading-state message="Loading your orders..." />
+  }
 
-  <!-- Error -->
-  <div *ngIf="error" class="alert alert-danger d-flex align-items-center gap-2">
-    <i class="bi bi-exclamation-circle-fill"></i>
-    <span>{{ error }}</span>
-  </div>
+  <!-- Failure with nothing to show -->
+  @if (state.isBlockingFailure) {
+    <app-error-state [error]="state.error!" [busy]="state.isRefreshing"
+                     (retry)="load()" />
+  }
+
+  <!-- Refresh failed but we still have the previous list -->
+  @if (state.isPartialFailure) {
+    <div class="alert alert-warning d-flex align-items-center gap-2" role="status">
+      <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+      <span class="flex-grow-1">{{ state.error!.message }}</span>
+      @if (state.error!.retryable) {
+        <button type="button" class="btn btn-sm btn-outline-dark" (click)="load()">
+          Try again
+        </button>
+      }
+    </div>
+  }
 
   <!-- Empty -->
-  <div *ngIf="!loading && orders.length === 0" class="text-center py-5">
-    <div style="width:100px;height:100px;background:#f3f4f6;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
-      <i class="bi bi-receipt" style="font-size:2.5rem;color:#9ca3af;"></i>
+  @if (state.isEmpty) {
+    <app-empty-state
+      icon="bi-receipt"
+      title="No orders yet"
+      message="When you place an order, it will appear here." />
+    <div class="text-center">
+      <a routerLink="/products" class="btn btn-primary px-5 py-2" style="border-radius:99px!important;">
+        <i class="bi bi-grid me-2" aria-hidden="true"></i>Start Shopping
+      </a>
     </div>
-    <h4 class="fw-bold mb-2">No orders yet</h4>
-    <p class="text-muted mb-4">When you place an order, it will appear here.</p>
-    <a routerLink="/products" class="btn btn-primary px-5 py-2" style="border-radius:99px!important;">
-      <i class="bi bi-grid me-2"></i>Start Shopping
-    </a>
-  </div>
+  }
 
   <!-- Orders -->
-  <div *ngIf="!loading && orders.length > 0" class="d-flex flex-column gap-3">
+  <div *ngIf="state.hasData" class="d-flex flex-column gap-3"
+       [attr.aria-busy]="state.isRefreshing">
 
     <div class="card border-0" *ngFor="let order of orders"
          style="transition:box-shadow .2s;"

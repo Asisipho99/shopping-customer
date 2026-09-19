@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
+import { AppError } from '../../core/models/app-error';
 
 @Component({
   selector: 'app-register',
@@ -44,10 +45,12 @@ export class RegisterComponent {
         this.success = 'Account created! Redirecting to login...';
         setTimeout(() => this.router.navigate(['/login']), 2000);
       },
-      error: (err) => {
-        this.error   = err.error?.message || 'Registration failed. Try again.';
+      error: (err: AppError) => {
+        // The user service returns useful text here, e.g. that the email is
+        // already registered, and the mapper has already surfaced it.
+        this.error = err.message;
         this.loading = false;
-      }
+      },
     });
   }
 }

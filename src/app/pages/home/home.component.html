@@ -67,19 +67,26 @@
     </a>
   </div>
 
-  @if (loading) {
-    <div class="text-center py-5">
-      <div class="spinner-border" style="width:2.5rem;height:2.5rem;"></div>
-      <p class="text-muted mt-3">Loading products...</p>
-    </div>
-  } @else if (error) {
-    <div class="alert alert-danger d-flex align-items-center gap-2">
-      <i class="bi bi-exclamation-circle-fill"></i>
-      <span>{{ error }}</span>
-    </div>
+  @if (featured.isLoading) {
+    <app-skeleton-grid [count]="8" message="Loading featured products..." />
+  } @else if (featured.isBlockingFailure) {
+    <app-error-state [error]="featured.error!" [busy]="featured.isRefreshing"
+                     (retry)="loadFeatured()" />
+  } @else if (featured.isEmpty) {
+    <app-empty-state icon="bi-box-seam" title="No products yet"
+                     message="The catalogue is empty right now. Please check back soon." />
   } @else {
-    <div class="row g-3">
-      @for (product of featuredProducts; track product.productId) {
+    @if (featured.isPartialFailure) {
+      <div class="alert alert-warning d-flex align-items-center gap-2" role="status">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <span class="flex-grow-1">{{ featured.error!.message }}</span>
+        <button type="button" class="btn btn-sm btn-outline-dark" (click)="loadFeatured()">
+          Refresh
+        </button>
+      </div>
+    }
+    <div class="row g-3" [attr.aria-busy]="featured.isRefreshing">
+      @for (product of featured.data; track product.productId) {
         <div class="col-6 col-md-4 col-lg-3">
           <div class="card product-card h-100 border-0">
             <div class="product-img-wrapper">
@@ -115,40 +122,63 @@
   }
 </section>
 
-<!-- AI Recommendations -->
-@if (recommendations.length > 0) {
+<!-- AI Recommendations - only rendered for a signed-in customer -->
+@if (auth.isLoggedIn() && recommendations.status !== 'idle') {
   <section class="container my-5">
     <div class="d-flex align-items-center gap-2 mb-4">
-      <i class="bi bi-stars text-warning fs-4"></i>
+      <i class="bi bi-stars text-warning fs-4" aria-hidden="true"></i>
       <h3 class="fw-bold mb-0">Recommended For You</h3>
       <span class="badge bg-warning text-dark ms-2">AI Powered</span>
     </div>
-    <div class="row g-3">
-      @for (rec of recommendations; track rec.product_id) {
-        <div class="col-6 col-md-4 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm">
-            <div class="product-img-wrapper">
-              <img [src]="rec.image_url || 'assets/no-image.png'"
-                   [alt]="rec.name" class="product-img">
-              <span class="ai-badge">
-                <i class="bi bi-stars me-1"></i>AI Pick
-              </span>
-            </div>
-            <div class="card-body">
-              <h6 class="fw-bold mb-1">{{ rec.name }}</h6>
-              <p class="text-muted small mb-2">{{ rec.reason }}</p>
-              <div class="d-flex align-items-center justify-content-between">
-                <span class="fw-bold text-primary">R{{ rec.price | number:'1.2-2' }}</span>
-                <a [routerLink]="['/products', rec.product_id]"
-                   class="btn btn-outline-primary btn-sm px-3" style="font-size:.8rem;">
-                  View
-                </a>
+
+    @if (recommendations.isLoading) {
+      <app-skeleton-grid [count]="4" message="Finding recommendations for you..." />
+    } @else if (recommendations.isFailed) {
+      <!-- Supplementary content: explain the gap, offer a retry, never block the page -->
+      <div class="alert alert-light border d-flex align-items-center gap-2" role="status">
+        <i class="bi bi-stars text-muted" aria-hidden="true"></i>
+        <span class="flex-grow-1 text-muted small">
+          We couldn't load your recommendations just now. {{ recommendations.error!.message }}
+        </span>
+        @if (recommendations.error!.retryable) {
+          <button type="button" class="btn btn-sm btn-outline-secondary"
+                  (click)="loadRecommendations()">
+            Try again
+          </button>
+        }
+      </div>
+    } @else if (recommendations.isEmpty) {
+      <p class="text-muted small mb-0">
+        Browse a few products and we'll start suggesting things you might like.
+      </p>
+    } @else {
+      <div class="row g-3">
+        @for (rec of recommendations.data; track rec.productId) {
+          <div class="col-6 col-md-4 col-lg-3">
+            <div class="card h-100 border-0 shadow-sm">
+              <div class="product-img-wrapper">
+                <img [src]="rec.imageUrl || 'assets/no-image.png'"
+                     [alt]="rec.name" class="product-img">
+                <span class="ai-badge">
+                  <i class="bi bi-stars me-1" aria-hidden="true"></i>AI Pick
+                </span>
+              </div>
+              <div class="card-body">
+                <h6 class="fw-bold mb-1">{{ rec.name }}</h6>
+                <p class="text-muted small mb-2">{{ rec.reason }}</p>
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="fw-bold text-primary">R{{ rec.price | number:'1.2-2' }}</span>
+                  <a [routerLink]="['/products', rec.productId]"
+                     class="btn btn-outline-primary btn-sm px-3" style="font-size:.8rem;">
+                    View
+                  </a>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      }
-    </div>
+        }
+      </div>
+    }
   </section>
 }
 

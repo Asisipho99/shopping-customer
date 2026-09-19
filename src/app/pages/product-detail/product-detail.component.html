@@ -1,22 +1,21 @@
 <div class="container py-5">
 
   <!-- Breadcrumb -->
-  <nav class="mb-4" *ngIf="!loading && product">
+  <nav class="mb-4" *ngIf="product">
     <ol class="breadcrumb" style="font-size:.82rem;">
       <li class="breadcrumb-item"><a routerLink="/" class="text-decoration-none" style="color:#6366f1;">Home</a></li>
       <li class="breadcrumb-item"><a routerLink="/products" class="text-decoration-none" style="color:#6366f1;">Products</a></li>
-      <li class="breadcrumb-item active text-muted">{{ product.name }}</li>
+      <li class="breadcrumb-item active text-muted">{{ product!.name }}</li>
     </ol>
   </nav>
 
   <!-- Loading -->
-  <div *ngIf="loading" class="text-center py-5">
-    <div class="spinner-border" style="width:2.5rem;height:2.5rem;"></div>
-    <p class="text-muted mt-3">Loading product...</p>
-  </div>
+  @if (state.isLoading) {
+    <app-loading-state message="Loading product..." />
+  }
 
   <!-- Product -->
-  <div class="row g-5" *ngIf="!loading && product">
+  <div class="row g-5" *ngIf="product">
 
     <!-- Image -->
     <div class="col-md-5">
@@ -107,16 +106,29 @@
     </div>
   </div>
 
-  <!-- Not Found -->
-  <div *ngIf="!loading && !product" class="text-center py-5">
-    <div style="width:80px;height:80px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
-      <i class="bi bi-exclamation-circle" style="font-size:2rem;color:#ef4444;"></i>
-    </div>
-    <h4 class="fw-bold">Product not found</h4>
-    <p class="text-muted">This product may have been removed or doesn't exist.</p>
-    <a routerLink="/products" class="btn btn-primary px-5 mt-2" style="border-radius:99px!important;">
-      Browse Products
-    </a>
-  </div>
+  <!--
+    Failure. A genuine 404 gets "not found" with a link onwards; a network or
+    server failure gets its own wording plus a Retry, because retrying a 404
+    would never help while retrying a dropped connection usually does.
+  -->
+  @if (state.isBlockingFailure) {
+    @if (state.error!.kind === 'notFound') {
+      <div class="text-center py-5">
+        <div style="width:80px;height:80px;background:#fef2f2;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+          <i class="bi bi-exclamation-circle" style="font-size:2rem;color:#ef4444;" aria-hidden="true"></i>
+        </div>
+        <h4 class="fw-bold">Product not found</h4>
+        <p class="text-muted">This product may have been removed or doesn't exist.</p>
+        <a routerLink="/products" class="btn btn-primary px-5 mt-2" style="border-radius:99px!important;">
+          Browse Products
+        </a>
+      </div>
+    } @else {
+      <app-error-state [error]="state.error!" (retry)="load()" />
+      <div class="text-center">
+        <a routerLink="/products" class="btn btn-link">Back to all products</a>
+      </div>
+    }
+  }
 
 </div>

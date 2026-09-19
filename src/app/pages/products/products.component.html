@@ -4,9 +4,15 @@
     <div class="d-flex align-items-center justify-content-between">
       <div>
         <h2 class="mb-1">All Products</h2>
-        <p class="mb-0">
-          @if (!loading) { {{ filteredProducts.length }} products found }
-          @else { Loading... }
+        <p class="mb-0" aria-live="polite">
+          @if (state.isLoading) {
+            Loading...
+          } @else if (state.isBlockingFailure) {
+            Couldn't load products
+          } @else {
+            {{ products.length }} {{ products.length === 1 ? 'product' : 'products' }} found
+            @if (state.isRefreshing) { <span class="ms-1">- loading more...</span> }
+          }
         </p>
       </div>
       <!-- Filter toggle — only visible on small screens -->
@@ -60,7 +66,7 @@
                    style="cursor:pointer;transition:background .15s;"
                    [style.background]="selectedCategory === '' ? '#e0e7ff' : 'transparent'">
               <input class="form-check-input m-0" type="radio"
-                     value="" [(ngModel)]="selectedCategory" (change)="filter()">
+                     value="" [(ngModel)]="selectedCategory" (change)="onCategoryChange()">
               <span style="font-size:.85rem;font-weight:500;"
                     [style.color]="selectedCategory === '' ? '#6366f1' : '#374151'">
                 All Categories
@@ -84,8 +90,8 @@
 
         <button class="btn btn-sm w-100"
                 style="border:1.5px solid #e5e7eb;border-radius:8px;font-size:.8rem;font-weight:600;color:#6b7280;"
-                (click)="searchTerm=''; selectedCategory=''; filtersOpen=false; onCategoryChange()">
-          <i class="bi bi-x-circle me-1"></i>Clear Filters
+                (click)="filtersOpen = false; clearFilters()">
+          <i class="bi bi-x-circle me-1" aria-hidden="true"></i>Clear Filters
         </button>
       </div>
     </div>
@@ -93,27 +99,29 @@
     <!-- Grid -->
     <div class="col-lg-9">
 
-      @if (loading) {
-        <div class="text-center py-5">
-          <div class="spinner-border" style="width:2.5rem;height:2.5rem;"></div>
-          <p class="text-muted mt-3">Loading products...</p>
-        </div>
-      }
+      @if (state.isLoading) {
+        <app-skeleton-grid [count]="9" colClass="col-6 col-md-4"
+                           message="Loading products..." />
+      } @else if (state.isBlockingFailure) {
+        <app-error-state [error]="state.error!" (retry)="load()" />
+      } @else {
 
-      @if (error) {
-        <div class="alert alert-danger d-flex align-items-center gap-2">
-          <i class="bi bi-exclamation-circle-fill"></i>
-          <span>{{ error }}</span>
-          <button class="btn btn-sm btn-outline-danger ms-auto" (click)="loadProducts()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Retry
-          </button>
-        </div>
-      }
+        <!-- A page failed while results were already showing: keep them, say why -->
+        @if (state.isPartialFailure) {
+          <div class="alert alert-warning d-flex align-items-center gap-2" role="status">
+            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+            <span class="flex-grow-1">{{ state.error!.message }}</span>
+            @if (state.error!.retryable) {
+              <button type="button" class="btn btn-sm btn-outline-dark" (click)="loadMore()">
+                Try again
+              </button>
+            }
+          </div>
+        }
 
-      @if (!loading) {
-        <div class="row g-3">
+        <div class="row g-3" [attr.aria-busy]="state.isRefreshing">
 
-          @for (product of filteredProducts; track product.productId) {
+          @for (product of products; track product.productId) {
             <div class="col-6 col-md-4">
               <div class="card product-card h-100 border-0">
                 <div class="product-img-wrapper">
@@ -150,32 +158,40 @@
             </div>
           }
 
-          <!-- Empty -->
-          @if (filteredProducts.length === 0) {
-            <div class="col-12 text-center py-5">
-              <div style="width:80px;height:80px;background:#f3f4f6;border-radius:50%;
-                          display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
-                <i class="bi bi-search" style="font-size:2rem;color:#9ca3af;"></i>
-              </div>
-              <h5 class="fw-bold text-muted">No products found</h5>
-              <p class="text-muted" style="font-size:.875rem;">Try adjusting your search or filters</p>
-              <button class="btn btn-outline-primary btn-sm px-4"
-                      (click)="searchTerm=''; selectedCategory=''; onCategoryChange()">
-                Clear Filters
-              </button>
+          <!--
+            Empty. Distinguished on purpose: an empty result for a filter is a
+            different message, with a different action, from an empty catalogue.
+          -->
+          @if (state.isEmpty) {
+            <div class="col-12">
+              @if (isFiltered) {
+                <app-empty-state
+                  icon="bi-search"
+                  title="No products match your filters"
+                  message="Try a different search term or category."
+                  actionLabel="Clear filters"
+                  (action)="clearFilters()" />
+              } @else {
+                <app-empty-state
+                  icon="bi-box-seam"
+                  title="No products yet"
+                  message="The catalogue is empty right now. Please check back soon." />
+              }
             </div>
           }
 
           <!-- Load More -->
-          @if (!isLastPage && !searchTerm && !selectedCategory) {
+          @if (!isLastPage && !isFiltered && state.hasData) {
             <div class="col-12 text-center mt-3">
-              <button class="btn btn-outline-primary px-5"
+              <button type="button" class="btn btn-outline-primary px-5"
                       style="border-radius:99px;"
-                      (click)="loadMore()" [disabled]="loadingMore">
-                @if (loadingMore) {
-                  <span class="spinner-border spinner-border-sm me-2"></span>
+                      (click)="loadMore()" [disabled]="state.isBusy">
+                @if (state.isRefreshing) {
+                  <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                  Loading...
+                } @else {
+                  Load More
                 }
-                {{ loadingMore ? 'Loading...' : 'Load More' }}
               </button>
             </div>
           }

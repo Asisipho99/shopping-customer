@@ -4,76 +4,119 @@ import { RouterLink } from '@angular/router';
 import { ProductService } from '../../core/services/product.service';
 import { CartService } from '../../core/services/cart.service';
 import { AuthService } from '../../core/services/auth.service';
+import { RecommendationService, Recommendation } from '../../core/services/recommendation.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Product } from '../../models/product.model';
-import { environment } from '../../../environments/environment';
-import { HttpClient } from '@angular/common/http';
+import { RequestState } from '../../core/models/request-state';
+import { LoadingStateComponent } from '../../shared/components/states/loading-state.component';
+import { ErrorStateComponent } from '../../shared/components/states/error-state.component';
+import { EmptyStateComponent } from '../../shared/components/states/empty-state.component';
+import { SkeletonGridComponent } from '../../shared/components/states/skeleton-grid.component';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterLink, DecimalPipe, SlicePipe],
+  imports: [
+    CommonModule,
+    RouterLink,
+    DecimalPipe,
+    SlicePipe,
+    LoadingStateComponent,
+    ErrorStateComponent,
+    EmptyStateComponent,
+    SkeletonGridComponent,
+  ],
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+  styleUrls: ['./home.component.scss'],
 })
 export class HomeComponent implements OnInit {
+  /** Featured products are the main content: a failure here blocks the section. */
+  readonly featured = new RequestState<Product[]>([]);
 
-  featuredProducts: Product[] = [];
-  loading           = true;
-  error             = '';
-  recommendations:  any[]     = [];
+  /**
+   * Recommendations are supplementary. They get their own state so a failure
+   * shows a small inline notice in that section instead of either breaking the
+   * page or - as before - disappearing with no explanation at all.
+   */
+  readonly recommendations = new RequestState<Recommendation[]>([]);
 
   categories = [
-    { name: 'Electronics',  icon: 'bi-cpu',          color: '#4472C4' },
-    { name: 'Clothing',     icon: 'bi-bag',           color: '#70AD47' },
-    { name: 'Books',        icon: 'bi-book',          color: '#ED7D31' },
-    { name: 'Sports',       icon: 'bi-trophy',        color: '#9B59B6' },
-    { name: 'Home & Garden',icon: 'bi-house-heart',   color: '#C0392B' },
-    { name: 'Toys',         icon: 'bi-controller',    color: '#16A085' },
+    { name: 'Electronics', icon: 'bi-cpu', color: '#4472C4' },
+    { name: 'Clothing', icon: 'bi-bag', color: '#70AD47' },
+    { name: 'Books', icon: 'bi-book', color: '#ED7D31' },
+    { name: 'Sports', icon: 'bi-trophy', color: '#9B59B6' },
+    { name: 'Home & Garden', icon: 'bi-house-heart', color: '#C0392B' },
+    { name: 'Toys', icon: 'bi-controller', color: '#16A085' },
   ];
 
   features = [
-    { icon: 'bi-truck',                  color: '#4472C4', title: 'Fast Delivery',
-      desc: 'Get your orders delivered quickly and safely' },
-    { icon: 'bi-shield-check',           color: '#70AD47', title: 'Secure Payment',
-      desc: 'Your payment information is always protected' },
-    { icon: 'bi-arrow-counterclockwise', color: '#ED7D31', title: 'Easy Returns',
-      desc: 'Hassle-free returns within 30 days' },
-    { icon: 'bi-headset',                color: '#9B59B6', title: '24/7 Support',
-      desc: 'Our team is always here to help you' },
+    {
+      icon: 'bi-truck',
+      color: '#4472C4',
+      title: 'Fast Delivery',
+      desc: 'Get your orders delivered quickly and safely',
+    },
+    {
+      icon: 'bi-shield-check',
+      color: '#70AD47',
+      title: 'Secure Payment',
+      desc: 'Your payment information is always protected',
+    },
+    {
+      icon: 'bi-arrow-counterclockwise',
+      color: '#ED7D31',
+      title: 'Easy Returns',
+      desc: 'Hassle-free returns within 30 days',
+    },
+    {
+      icon: 'bi-headset',
+      color: '#9B59B6',
+      title: '24/7 Support',
+      desc: 'Our team is always here to help you',
+    },
   ];
 
   constructor(
     private productService: ProductService,
-    private cartService:    CartService,
-    public  auth:           AuthService,
-    private http:           HttpClient
+    private cartService: CartService,
+    public auth: AuthService,
+    private recommendationService: RecommendationService,
+    private toasts: ToastService
   ) {}
 
-  ngOnInit() {
-    this.productService.getAll(0, 8).subscribe({
-      next: (page) => {
-        this.featuredProducts = page.content;
-        this.loading          = false;
-      },
-      error: () => {
-        this.error   = 'Failed to load products. Please refresh the page.';
-        this.loading = false;
-      }
-    });
-
-    // Load personalised recommendations if logged in
-    if (this.auth.isLoggedIn()) {
-      const customerId = this.auth.getCustomerId();
-      this.http.get<any>(
-        `${environment.aiServiceUrl}/api/recommendations/${customerId}?n=4`
-      ).subscribe({
-        next:  (res) => this.recommendations = res.data?.recommendations || [],
-        error: ()    => {} // Fail silently — recommendations are non-critical
-      });
-    }
+  ngOnInit(): void {
+    this.loadFeatured();
+    this.loadRecommendations();
   }
 
-  addToCart(product: Product) {
+  loadFeatured(): void {
+    // Keep existing cards on screen when this is a retry rather than a cold load.
+    this.featured.hasData ? this.featured.beginRefresh() : this.featured.begin();
+
+    this.productService.getAll(0, 8).subscribe({
+      next: (page) => this.featured.succeed(page.content),
+      error: (err) => this.featured.fail(err),
+    });
+  }
+
+  loadRecommendations(): void {
+    if (!this.auth.isLoggedIn()) {
+      this.recommendations.reset();
+      return;
+    }
+
+    this.recommendations.hasData
+      ? this.recommendations.beginRefresh()
+      : this.recommendations.begin();
+
+    this.recommendationService.getForCustomer(this.auth.getCustomerId(), 4).subscribe({
+      next: (items) => this.recommendations.succeed(items),
+      error: (err) => this.recommendations.fail(err),
+    });
+  }
+
+  addToCart(product: Product): void {
     this.cartService.addToCart(product, 1);
+    this.toasts.success(`${product.name} added to your cart.`);
   }
 }
