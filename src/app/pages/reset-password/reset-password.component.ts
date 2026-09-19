@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { AppError } from '../../core/models/app-error';
 
 @Component({
   selector: 'app-reset-password',
@@ -47,10 +48,15 @@ export class ResetPasswordComponent implements OnInit {
         this.success = 'Password reset successfully! You can now log in with your new password.';
         this.loading = false;
       },
-      error: (err) => {
-        this.error   = err.error?.message || err.error || 'Invalid or expired reset token. Please request a new link.';
+      error: (err: AppError) => {
+        // A rejected or expired token comes back as a 400 with server text;
+        // fall back to explicit wording when the server said nothing useful.
+        this.error =
+          err.kind === 'validation' || err.kind === 'conflict'
+            ? err.message
+            : 'Invalid or expired reset token. Please request a new link.';
         this.loading = false;
-      }
+      },
     });
   }
 }
