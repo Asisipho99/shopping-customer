@@ -8,8 +8,8 @@
 
 <div class="container pb-5">
 
-  <!-- Success State -->
-  <div class="text-center py-5" *ngIf="success"
+  <!-- Success state -->
+  <div class="text-center py-5" *ngIf="success()"
        style="max-width:480px;margin:0 auto;">
     <div class="success-circle">
       <i class="bi bi-check-lg" style="font-size:2rem;"></i>
@@ -22,16 +22,16 @@
     <div class="spinner-border" style="width:1.5rem;height:1.5rem;"></div>
   </div>
 
-  <div class="row g-4" *ngIf="!success">
+  <div class="row g-4" *ngIf="!success()">
 
     <!-- Order Items -->
     <div class="col-lg-7">
       <div class="card border-0 mb-4">
         <div class="card-body p-4">
           <h6 class="fw-bold mb-4" style="font-size:.9rem;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;">
-            <i class="bi bi-bag me-2"></i>Order Items ({{ cart.totalItems }})
+            <i class="bi bi-bag me-2"></i>Order Items ({{ cart().totalItems }})
           </h6>
-          <div *ngFor="let item of cart.items; let last = last"
+          <div *ngFor="let item of cart().items; let last = last"
                class="d-flex align-items-center gap-3 py-3"
                [class.border-bottom]="!last">
             <img [src]="item.product.imageUrl || 'assets/no-image.png'"
@@ -76,8 +76,8 @@
           </h6>
 
           <div class="d-flex justify-content-between mb-2" style="font-size:.875rem;">
-            <span class="text-muted">Items ({{ cart.totalItems }})</span>
-            <span>R{{ cart.totalPrice | number:'1.2-2' }}</span>
+            <span class="text-muted">Items ({{ cart().totalItems }})</span>
+            <span>R{{ cart().totalPrice | number:'1.2-2' }}</span>
           </div>
           <div class="d-flex justify-content-between mb-3" style="font-size:.875rem;">
             <span class="text-muted">Delivery</span>
@@ -87,7 +87,7 @@
           <div class="d-flex justify-content-between align-items-center py-3 border-top border-bottom mb-4">
             <span class="fw-bold">Total</span>
             <span style="font-size:1.5rem;font-weight:800;color:#6366f1;">
-              R{{ cart.totalPrice | number:'1.2-2' }}
+              R{{ cart().totalPrice | number:'1.2-2' }}
             </span>
           </div>
 
@@ -96,16 +96,16 @@
             without rebuilding it. Out-of-stock gets its own hint, because the
             fix is to change the quantity rather than to try again.
           -->
-          <div class="alert mb-3 p-3" *ngIf="error" role="alert"
+          <div class="alert mb-3 p-3" *ngIf="error()" role="alert"
                style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#991b1b;font-size:.85rem;">
             <div class="d-flex align-items-start gap-2">
               <i class="bi bi-exclamation-circle mt-1" aria-hidden="true"></i>
               <div>
-                <div>{{ error }}</div>
-                @if (errorKind === 'conflict' || errorKind === 'validation') {
+                <div>{{ error() }}</div>
+                @if (errorKind() === 'conflict' || errorKind() === 'validation') {
                   <a routerLink="/cart" class="d-inline-block mt-2 fw-semibold"
                      style="color:#991b1b;">Review your cart</a>
-                } @else if (retryable) {
+                } @else if (retryable()) {
                   <div class="mt-1 small">Your cart has been kept, so you can try again.</div>
                 }
               </div>
@@ -114,12 +114,12 @@
 
           <button class="btn btn-primary w-100 py-3 fw-semibold mb-2"
                   style="border-radius:12px!important;font-size:.95rem;"
-                  (click)="placeOrder()" [disabled]="loading"
-                  [attr.aria-busy]="loading">
-            <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"
+                  (click)="placeOrder()" [disabled]="loading()"
+                  [attr.aria-busy]="loading()">
+            <span *ngIf="loading()" class="spinner-border spinner-border-sm me-2"
                   aria-hidden="true"></span>
-            <i *ngIf="!loading" class="bi bi-bag-check me-2" aria-hidden="true"></i>
-            {{ loading ? 'Placing your order...' : (error ? 'Try again' : 'Place Order') }}
+            <i *ngIf="!loading()" class="bi bi-bag-check me-2" aria-hidden="true"></i>
+            {{ loading() ? 'Placing your order...' : (error() ? 'Try again' : 'Place Order') }}
           </button>
 
           <a routerLink="/cart"

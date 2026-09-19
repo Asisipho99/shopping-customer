@@ -10,13 +10,13 @@
       <p class="text-muted mb-0" style="font-size:.875rem;">Join thousands of happy shoppers</p>
     </div>
 
-    <div class="alert p-3 mb-3" *ngIf="success"
+    <div class="alert p-3 mb-3" *ngIf="success()"
          style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;color:#065f46;font-size:.85rem;">
-      <i class="bi bi-check-circle me-2"></i>{{ success }}
+      <i class="bi bi-check-circle me-2"></i>{{ success() }}
     </div>
-    <div class="alert p-3 mb-3" *ngIf="error"
+    <div class="alert p-3 mb-3" *ngIf="error()"
          style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;color:#991b1b;font-size:.85rem;">
-      <i class="bi bi-exclamation-circle me-2"></i>{{ error }}
+      <i class="bi bi-exclamation-circle me-2"></i>{{ error() }}
     </div>
 
     <div class="row g-3">
@@ -59,9 +59,9 @@
 
     <button class="btn btn-primary w-100 py-3 fw-semibold mt-4 mb-3"
             style="border-radius:12px!important;"
-            (click)="register()" [disabled]="loading">
-      <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-      {{ loading ? 'Creating account...' : 'Create Account' }}
+            (click)="register()" [disabled]="loading()">
+      <span *ngIf="loading()" class="spinner-border spinner-border-sm me-2"></span>
+      {{ loading() ? 'Creating account...' : 'Create Account' }}
     </button>
 
     <p class="text-center mb-0" style="font-size:.875rem;color:#6b7280;">

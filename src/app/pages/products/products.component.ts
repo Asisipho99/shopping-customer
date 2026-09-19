@@ -81,8 +81,7 @@ export class ProductsComponent implements OnInit {
   }
 
   resetAndLoad(): void {
-    this.state.reset();
-    this.state.data = [];
+    this.state.reset([]);
     this.currentPage = 0;
     this.isLastPage = false;
     this.load();

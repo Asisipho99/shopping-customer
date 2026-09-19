@@ -35,8 +35,8 @@
       <!-- Cart -->
       <a class="cart-btn" routerLink="/cart" title="Cart" (click)="closeMobile()">
         <i class="bi bi-bag"></i>
-        @if (cartItemCount > 0) {
-          <span class="cart-badge">{{ cartItemCount }}</span>
+        @if (cartItemCount() > 0) {
+          <span class="cart-badge">{{ cartItemCount() }}</span>
         }
       </a>
 

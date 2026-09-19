@@ -1,5 +1,4 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
 import { AppError } from '../models/app-error';
 
 export type ToastKind = 'success' | 'error' | 'warning' | 'info';
@@ -30,9 +29,16 @@ const DURATION: Record<ToastKind, number> = {
 @Injectable({ providedIn: 'root' })
 export class ToastService {
   private nextId = 1;
-  private readonly subject = new BehaviorSubject<Toast[]>([]);
 
-  readonly toasts$ = this.subject.asObservable();
+  /**
+   * A signal rather than a subject, because auto-dismiss fires from a timer.
+   * Under zoneless change detection a timer callback notifies Angular of
+   * nothing, so a subject-backed list would leave dismissed toasts painted on
+   * screen until the user happened to click something.
+   */
+  private readonly _toasts = signal<Toast[]>([]);
+
+  readonly toasts = this._toasts.asReadonly();
 
   success(message: string, title?: string): void {
     this.push('success', message, title);
@@ -56,22 +62,20 @@ export class ToastService {
   }
 
   dismiss(id: number): void {
-    this.subject.next(this.subject.value.filter((t) => t.id !== id));
+    this._toasts.update((list) => list.filter((t) => t.id !== id));
   }
 
   clear(): void {
-    this.subject.next([]);
+    this._toasts.set([]);
   }
 
   private push(kind: ToastKind, message: string, title?: string): void {
-    const current = this.subject.value;
-
     // Guard against the same message stacking up, which happened when several
     // parallel requests failed for one underlying cause (e.g. the API is down).
-    if (current.some((t) => t.message === message && t.kind === kind)) return;
+    if (this._toasts().some((t) => t.message === message && t.kind === kind)) return;
 
     const toast: Toast = { id: this.nextId++, kind, message, title };
-    this.subject.next([...current, toast]);
+    this._toasts.update((list) => [...list, toast]);
 
     setTimeout(() => this.dismiss(toast.id), DURATION[kind]);
   }
