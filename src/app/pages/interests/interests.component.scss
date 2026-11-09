@@ -1,0 +1,39 @@
+.interest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.interest-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 2px solid #dee2e6;
+  border-radius: 12px;
+  background: white;
+  color: #212529;
+  font-weight: 500;
+  text-align: left;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+
+  i {
+    font-size: 1.1rem;
+    color: #adb5bd;
+  }
+
+  &:hover {
+    border-color: #1A3A5C;
+  }
+
+  &--on {
+    border-color: #1A3A5C;
+    background: #f1f5fb;
+    box-shadow: 0 2px 10px rgba(26, 58, 92, .12);
+
+    i {
+      color: #1A3A5C;
+    }
+  }
+}

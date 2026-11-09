@@ -21,6 +21,14 @@ interface RecommendationEnvelope {
     customer_id: number;
     count: number;
     type: 'hybrid' | 'fallback';
+    /**
+     * Set when the list was seeded from the customer's chosen interests.
+     *
+     * Additive and only present when true, exactly like `degraded`, so the
+     * two-value `type` union above still holds against a newer API. Nothing
+     * here renders it: the per-item `reason` string is what the UI shows.
+     */
+    interest_seeded?: boolean;
     recommendations: Array<{
       product_id: number;
       name: string;

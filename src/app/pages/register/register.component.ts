@@ -46,8 +46,21 @@ export class RegisterComponent {
     this.loading.set(true);
     this.auth.register(this.form).subscribe({
       next: () => {
-        this.success.set('Account created! Redirecting to login...');
-        setTimeout(() => this.router.navigate(['/login']), 2000);
+        // The auto-login is required, not cosmetic: POST /users/register answers
+        // with a CustomerResponse and no token, while the interests endpoints
+        // are authenticated. Without a session the interest step could not save
+        // anything, so if the login fails we fall back to today's behaviour -
+        // the message plus the redirect to /login.
+        this.auth.login(this.form.email, this.form.password).subscribe({
+          next: () => {
+            this.success.set('Account created! Let us know what you like...');
+            this.router.navigate(['/interests'], { queryParams: { onboarding: 1 } });
+          },
+          error: () => {
+            this.success.set('Account created! Redirecting to login...');
+            setTimeout(() => this.router.navigate(['/login']), 2000);
+          },
+        });
       },
       error: (err: AppError) => {
         // The user service returns useful text here, e.g. that the email is

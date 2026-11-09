@@ -1,0 +1,74 @@
+<!-- Header -->
+<div class="page-header">
+  <div class="container">
+    <h2 class="mb-1"><i class="bi bi-stars me-2"></i>
+      {{ onboarding ? 'What are you into?' : 'My Interests' }}
+    </h2>
+    <p class="mb-0">
+      {{ onboarding
+          ? 'Pick a few categories and we will have something for you straight away. You can skip this and change it any time.'
+          : 'Update the categories we use to pick what we show you.' }}
+    </p>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  @if (state.isLoading) {
+    <app-loading-state message="Loading categories..." />
+  }
+
+  @if (state.isBlockingFailure) {
+    <app-error-state [error]="state.error!" [busy]="state.isRefreshing"
+                     (retry)="load()" />
+  }
+
+  @if (state.hasData) {
+    <div class="interest-grid" role="group" aria-label="Interest categories">
+      @for (category of categories; track category) {
+        <button type="button" class="interest-chip"
+                [class.interest-chip--on]="isSelected(category)"
+                [attr.aria-pressed]="isSelected(category)"
+                (click)="toggle(category)">
+          <i class="bi" aria-hidden="true"
+             [class.bi-check-circle-fill]="isSelected(category)"
+             [class.bi-circle]="!isSelected(category)"></i>
+          <span>{{ category }}</span>
+        </button>
+      }
+    </div>
+
+    <p class="text-muted small mt-3 mb-4" role="status" aria-live="polite">
+      @if (selectedCount) {
+        {{ selectedCount }} selected
+      } @else {
+        Nothing selected yet - saving an empty list is fine too.
+      }
+    </p>
+
+    <div class="d-flex flex-wrap gap-2">
+      <button type="button" class="btn btn-primary px-4 btn-save"
+              [disabled]="saving()" (click)="save()">
+        @if (saving()) {
+          <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+          Saving...
+        } @else {
+          <i class="bi bi-check2 me-2" aria-hidden="true"></i>
+          {{ onboarding ? 'Save and continue' : 'Save changes' }}
+        }
+      </button>
+
+      @if (onboarding) {
+        <button type="button" class="btn btn-outline-secondary px-4 btn-skip"
+                [disabled]="saving()" (click)="skip()">
+          Skip for now
+        </button>
+      } @else {
+        <button type="button" class="btn btn-outline-secondary px-4 btn-back"
+                [disabled]="saving()" (click)="back()">
+          <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Back
+        </button>
+      }
+    </div>
+  }
+</div>

@@ -7,6 +7,7 @@ import { CartService } from '../../core/services/cart.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Product } from '../../models/product.model';
 import { RequestState } from '../../core/models/request-state';
+import { FALLBACK_CATEGORIES } from '../../core/constants/categories';
 import { ErrorStateComponent } from '../../shared/components/states/error-state.component';
 import { EmptyStateComponent } from '../../shared/components/states/empty-state.component';
 import { SkeletonGridComponent } from '../../shared/components/states/skeleton-grid.component';
@@ -46,16 +47,8 @@ export class ProductsComponent implements OnInit {
 
   filtersOpen = false;
 
-  categories = [
-    'Electronics',
-    'Clothing',
-    'Books',
-    'Home & Garden',
-    'Sports',
-    'Toys',
-    'Food & Beverages',
-    'Other',
-  ];
+  /** Same eight values as before, now read from the one shared constant. */
+  categories = [...FALLBACK_CATEGORIES];
 
   constructor(
     private productService: ProductService,
