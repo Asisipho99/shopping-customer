@@ -37,14 +37,26 @@
         </button>
       }
     </div>
-
-    <p class="text-muted small mt-3 mb-4" role="status" aria-live="polite">
-      @if (selectedCount) {
-        {{ selectedCount }} selected
-      } @else {
-        Nothing selected yet - saving an empty list is fine too.
-      }
+  } @else if (state.isEmpty) {
+    <!-- An empty catalogue answers [] rather than failing, so there is nothing to
+         pick from. The actions below stay outside this guard so the step is still
+         skippable and never becomes a dead end. -->
+    <p class="text-muted mb-4" role="status" aria-live="polite">
+      There are no categories to choose from just yet. You can continue and set your
+      interests later.
     </p>
+  }
+
+  @if (state.hasData || state.isEmpty) {
+    @if (state.hasData) {
+      <p class="text-muted small mt-3 mb-4" role="status" aria-live="polite">
+        @if (selectedCount) {
+          {{ selectedCount }} selected
+        } @else {
+          Nothing selected yet - saving an empty list is fine too.
+        }
+      </p>
+    }
 
     <div class="d-flex flex-wrap gap-2">
       <button type="button" class="btn btn-primary px-4 btn-save"

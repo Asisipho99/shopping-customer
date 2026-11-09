@@ -110,6 +110,24 @@ describe('InterestsComponent', () => {
     expect(navigate).toHaveBeenCalledWith(['/']);
   });
 
+  it('stays skippable when the catalogue has no categories', async () => {
+    const fixture = await create(true);
+
+    // §0.2: an empty catalogue answers [] rather than failing, so there is nothing
+    // to pick from and the page must still offer a way forward.
+    httpMock.expectOne(CATEGORIES_URL).flush([]);
+    httpMock.expectOne(INTERESTS_URL).flush({ customerId: 7, categories: [] });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('.interest-chip')).toBeNull();
+    expect(host.querySelector('.btn-save')).toBeTruthy();
+    expect(host.querySelector<HTMLButtonElement>('.btn-skip')!.textContent).toContain(
+      'Skip for now'
+    );
+  });
+
   it('is editable later: pre-selects the stored list and saves a reduced one', async () => {
     const fixture = await create(false);
     await settleLoad(fixture, ['Books', 'Toys']);
