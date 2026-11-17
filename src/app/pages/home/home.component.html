@@ -24,9 +24,10 @@
     </div>
 
     <div class="hero-stats">
-      <div class="stat"><div class="stat-num">10K+</div><div class="stat-label">Products</div></div>
-      <div class="stat"><div class="stat-num">50K+</div><div class="stat-label">Customers</div></div>
-      <div class="stat"><div class="stat-num">4.9★</div><div class="stat-label">Rating</div></div>
+      <!-- Only figures the catalogue can back up: the live product count. -->
+      @if (totalProducts() !== null) {
+        <div class="stat"><div class="stat-num">{{ totalProducts() }}</div><div class="stat-label">Products</div></div>
+      }
     </div>
   </div>
 </section>

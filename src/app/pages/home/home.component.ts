@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule, DecimalPipe, SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProductService } from '../../core/services/product.service';
@@ -39,6 +39,9 @@ export class HomeComponent implements OnInit {
    * page or - as before - disappearing with no explanation at all.
    */
   readonly recommendations = new RequestState<Recommendation[]>([]);
+
+  /** Catalogue size from the first products page; null until it has loaded. */
+  readonly totalProducts = signal<number | null>(null);
 
   categories = [
     { name: 'Electronics', icon: 'bi-cpu', color: '#4472C4' },
@@ -94,7 +97,10 @@ export class HomeComponent implements OnInit {
     this.featured.hasData ? this.featured.beginRefresh() : this.featured.begin();
 
     this.productService.getAll(0, 8).subscribe({
-      next: (page) => this.featured.succeed(page.content),
+      next: (page) => {
+        this.featured.succeed(page.content);
+        this.totalProducts.set(page.totalElements);
+      },
       error: (err) => this.featured.fail(err),
     });
   }
