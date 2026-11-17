@@ -5,6 +5,9 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { AppError } from '../../core/models/app-error';
 
+/** The interest-picking step every new customer is sent to after registering. */
+const ONBOARDING_URL = '/interests?onboarding=1';
+
 @Component({
   selector: 'app-register',
   standalone: true,
@@ -69,11 +72,17 @@ export class RegisterComponent {
         this.auth.login(this.form.email, this.form.password).subscribe({
           next: () => {
             this.success.set('Account created! Let us know what you like...');
-            this.router.navigate(['/interests'], { queryParams: { onboarding: 1 } });
+            this.router.navigateByUrl(ONBOARDING_URL);
           },
           error: () => {
             this.success.set('Account created! Redirecting to login...');
-            setTimeout(() => this.router.navigate(['/login']), 2000);
+            // The account exists but there is no session, so the onboarding step
+            // cannot be reached from here. Hand it to the login page as a
+            // returnUrl: LoginComponent navigates there after a manual sign-in.
+            setTimeout(
+              () => this.router.navigate(['/login'], { queryParams: { returnUrl: ONBOARDING_URL } }),
+              2000
+            );
           },
         });
       },

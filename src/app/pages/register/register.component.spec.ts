@@ -1,9 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import type { Mock } from 'vitest';
 import { RegisterComponent } from './register.component';
 import { AuthService } from '../../core/services/auth.service';
+
+/** A password that passes the component's own client-side rules. */
+const GOOD_PASSWORD = 'Passw0rdOK';
 
 describe('RegisterComponent', () => {
   let fixture: ComponentFixture<RegisterComponent>;
@@ -85,6 +88,44 @@ describe('RegisterComponent', () => {
 
       expect(auth.clearSession).not.toHaveBeenCalled();
       expect(auth.register).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when the automatic login after registering fails', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    async function registerWithFailingLogin(): Promise<void> {
+      await create(null);
+      auth.login = vi.fn(() => throwError(() => new Error('login failed')));
+      component.form = {
+        firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com',
+        password: GOOD_PASSWORD, phone: '0821234567',
+      };
+      component.register();
+    }
+
+    it('keeps the onboarding step as a returnUrl on the redirect to /login', async () => {
+      await registerWithFailingLogin();
+
+      expect(navigate).not.toHaveBeenCalled(); // not until the 2 second delay
+      vi.advanceTimersByTime(2000);
+
+      expect(navigate).toHaveBeenCalledTimes(1);
+      expect(navigate).toHaveBeenCalledWith(['/login'], {
+        queryParams: { returnUrl: '/interests?onboarding=1' },
+      });
+    });
+
+    it('produces a returnUrl that resolves to /interests with onboarding=1', async () => {
+      await registerWithFailingLogin();
+      vi.advanceTimersByTime(2000);
+
+      const { queryParams } = navigate.mock.calls[0][1] as { queryParams: { returnUrl: string } };
+      const target = TestBed.inject(Router).parseUrl(queryParams.returnUrl);
+
+      expect(target.root.children['primary'].segments.map((s) => s.path)).toEqual(['interests']);
+      expect(target.queryParams['onboarding']).toBe('1');
     });
   });
 
