@@ -41,8 +41,8 @@
     </div>
   </div>
   <div class="row g-3">
-    @for (cat of categories; track cat.name) {
-      <div class="col-4 col-md-2">
+    @for (cat of categories(); track cat.name) {
+      <div class="col-4 col-md-3">
         <a [routerLink]="['/products']" [queryParams]="{category: cat.name}" class="text-decoration-none">
           <div class="category-card">
             <div class="cat-icon" [style.background]="cat.color + '18'">
