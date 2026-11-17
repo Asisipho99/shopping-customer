@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 import type { Mock } from 'vitest';
 import { RegisterComponent } from './register.component';
 import { AuthService } from '../../core/services/auth.service';
@@ -12,6 +12,7 @@ describe('RegisterComponent', () => {
   let fixture: ComponentFixture<RegisterComponent>;
   let component: RegisterComponent;
   let navigate: Mock;
+  let navigateByUrl: Mock;
   let auth: {
     register: Mock;
     login: Mock;
@@ -40,7 +41,9 @@ describe('RegisterComponent', () => {
     });
 
     navigate = vi.fn(() => Promise.resolve(true));
+    navigateByUrl = vi.fn(() => Promise.resolve(true));
     TestBed.inject(Router).navigate = navigate as unknown as Router['navigate'];
+    TestBed.inject(Router).navigateByUrl = navigateByUrl as unknown as Router['navigateByUrl'];
 
     fixture = TestBed.createComponent(RegisterComponent);
     component = fixture.componentInstance;
@@ -129,6 +132,138 @@ describe('RegisterComponent', () => {
     });
   });
 
+  describe('client-side validation', () => {
+    async function submitWith(password: string): Promise<void> {
+      await create(null);
+      component.form = {
+        firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com', password, phone: '0821234567',
+      };
+      component.register();
+      await repaint();
+    }
+
+    it('rejects a password shorter than 8 characters without calling the API', async () => {
+      await submitWith('Ab1');
+
+      expect(component.error()).toBe('Password must be at least 8 characters.');
+      expect(auth.register).not.toHaveBeenCalled();
+      expect(auth.login).not.toHaveBeenCalled();
+    });
+
+    it('rejects a password with no uppercase letter, lowercase letter or digit', async () => {
+      for (const weak of ['alllowercase1', 'ALLUPPERCASE1', 'NoDigitsHere']) {
+        TestBed.resetTestingModule();
+        await submitWith(weak);
+
+        expect(component.error()).toContain('uppercase letter, one lowercase letter, and one number');
+        expect(auth.register).not.toHaveBeenCalled();
+      }
+    });
+  });
+
+  describe('registration chain', () => {
+    const FORM = {
+      firstName: 'Ada', lastName: 'Lovelace', email: 'ada@example.com',
+      password: GOOD_PASSWORD, phone: '0821234567',
+    };
+
+    async function submit(): Promise<void> {
+      component.form = { ...FORM };
+      component.register();
+      await repaint();
+    }
+
+    it('registers, then logs in with the same credentials, then opens the interests step', async () => {
+      await create(null);
+      await submit();
+
+      expect(auth.register).toHaveBeenCalledTimes(1);
+      expect(auth.register).toHaveBeenCalledWith(FORM);
+      expect(auth.login).toHaveBeenCalledTimes(1);
+      expect(auth.login).toHaveBeenCalledWith('ada@example.com', GOOD_PASSWORD);
+      expect(navigateByUrl).toHaveBeenCalledTimes(1);
+      expect(navigateByUrl).toHaveBeenCalledWith('/interests?onboarding=1');
+      expect(navigate).not.toHaveBeenCalled();
+      expect(component.success()).toBe('Account created! Let us know what you like...');
+      expect(component.error()).toBe('');
+    });
+
+    it('does not attempt the login until registration has succeeded', async () => {
+      await create(null);
+      const registered = new Subject<unknown>();
+      auth.register = vi.fn(() => registered);
+      await submit();
+
+      expect(auth.login).not.toHaveBeenCalled();
+      expect(component.loading()).toBe(true);
+
+      registered.next({ customerId: 1 });
+      registered.complete();
+      expect(auth.login).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the server message and stops when registration is refused', async () => {
+      await create(null);
+      auth.register = vi.fn(() =>
+        throwError(() => ({ kind: 'conflict', message: 'Email already registered' }))
+      );
+      await submit();
+
+      expect(component.error()).toBe('Email already registered');
+      expect(component.loading()).toBe(false);
+      expect(el().textContent).toContain('Email already registered');
+      expect(auth.login).not.toHaveBeenCalled();
+      expect(navigateByUrl).not.toHaveBeenCalled();
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    describe('half-failure: the account is created but the automatic login fails', () => {
+      beforeEach(() => vi.useFakeTimers());
+      afterEach(() => vi.useRealTimers());
+
+      it('tells the user the account exists and is redirecting to login, with no error', async () => {
+        await create(null);
+        auth.login = vi.fn(() => throwError(() => new Error('login failed')));
+        await submit();
+
+        expect(component.success()).toBe('Account created! Redirecting to login...');
+        expect(component.error()).toBe('');
+        expect(el().textContent).toContain('Account created! Redirecting to login...');
+      });
+
+      it('does not enter onboarding without a session and does not register twice', async () => {
+        await create(null);
+        auth.login = vi.fn(() => throwError(() => new Error('login failed')));
+        await submit();
+        vi.advanceTimersByTime(2000);
+
+        expect(auth.register).toHaveBeenCalledTimes(1);
+        expect(auth.login).toHaveBeenCalledTimes(1);
+        expect(navigateByUrl).not.toHaveBeenCalled();
+        expect(navigate).toHaveBeenCalledTimes(1);
+        expect(navigate.mock.calls[0][0]).toEqual(['/login']);
+      });
+
+      it('waits 2 seconds before redirecting so the message can be read', async () => {
+        await create(null);
+        auth.login = vi.fn(() => throwError(() => new Error('login failed')));
+        await submit();
+
+        vi.advanceTimersByTime(1999);
+        expect(navigate).not.toHaveBeenCalled();
+        vi.advanceTimersByTime(1);
+        expect(navigate).toHaveBeenCalledTimes(1);
+      });
+
+      it('leaves an existing session alone because no new session was created', async () => {
+        await create('existing@example.com');
+        auth.login = vi.fn(() => throwError(() => new Error('login failed')));
+        await submit();
+
+        expect(auth.clearSession).not.toHaveBeenCalled();
+      });
+    });
+  });
   describe('when nobody is signed in', () => {
     it('shows no signed-in notice', async () => {
       await create(null);
