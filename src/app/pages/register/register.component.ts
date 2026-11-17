@@ -29,6 +29,21 @@ export class RegisterComponent {
   readonly success = signal('');
   readonly loading = signal(false);
 
+  /**
+   * Email of the account this browser is already signed in as, or null when
+   * nobody is. Registering signs the new account in and so replaces that
+   * session; the page says so up front instead of doing it silently.
+   */
+  readonly signedInAs = signal<string | null>(
+    this.auth.isLoggedIn() ? this.auth.getEmail() || 'another account' : null
+  );
+
+  /** Ends the existing session but stays on this page so registration can go on. */
+  signOut() {
+    this.auth.clearSession();
+    this.signedInAs.set(null);
+  }
+
   register() {
     this.error.set('');
 
