@@ -5,6 +5,9 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { AppError } from '../../core/models/app-error';
 
+/** The interest-picking step every new customer is sent to after registering. */
+const ONBOARDING_URL = '/interests?onboarding=1';
+
 @Component({
   selector: 'app-register',
   standalone: true,
@@ -28,6 +31,21 @@ export class RegisterComponent {
   readonly error = signal('');
   readonly success = signal('');
   readonly loading = signal(false);
+
+  /**
+   * Email of the account this browser is already signed in as, or null when
+   * nobody is. Registering signs the new account in and so replaces that
+   * session; the page says so up front instead of doing it silently.
+   */
+  readonly signedInAs = signal<string | null>(
+    this.auth.isLoggedIn() ? this.auth.getEmail() || 'another account' : null
+  );
+
+  /** Ends the existing session but stays on this page so registration can go on. */
+  signOut() {
+    this.auth.clearSession();
+    this.signedInAs.set(null);
+  }
 
   register() {
     this.error.set('');
@@ -54,11 +72,17 @@ export class RegisterComponent {
         this.auth.login(this.form.email, this.form.password).subscribe({
           next: () => {
             this.success.set('Account created! Let us know what you like...');
-            this.router.navigate(['/interests'], { queryParams: { onboarding: 1 } });
+            this.router.navigateByUrl(ONBOARDING_URL);
           },
           error: () => {
             this.success.set('Account created! Redirecting to login...');
-            setTimeout(() => this.router.navigate(['/login']), 2000);
+            // The account exists but there is no session, so the onboarding step
+            // cannot be reached from here. Hand it to the login page as a
+            // returnUrl: LoginComponent navigates there after a manual sign-in.
+            setTimeout(
+              () => this.router.navigate(['/login'], { queryParams: { returnUrl: ONBOARDING_URL } }),
+              2000
+            );
           },
         });
       },
